@@ -1,0 +1,14 @@
+{
+  "name": "checkin-master-panel",
+  "version": "1.0.0",
+  "description": "CheckIn App Factory - Master Control Panel",
+  "main": "master-server.js",
+  "scripts": {
+    "start": "node master-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "better-sqlite3": "^11.0.0"
+  }
+}

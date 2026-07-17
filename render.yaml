@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: checkin-master
+    env: node
+    buildCommand: npm install
+    startCommand: node master-server.js
+    plan: free
+    envVars:
+      - key: GH_TOKEN
+        value: PLACEHOLDER_GH_TOKEN
+      - key: RENDER_API_KEY
+        value: PLACEHOLDER_RENDER_API_KEY
+      - key: TURSO_TOKEN
+        value: PLACEHOLDER_TURSO_TOKEN
+      - key: GH_USER
+        value: GGWP6818
+      - key: TURSO_ORG
+        value: ggwp6818
+      - key: MASTER_TOKEN
+        value: master-panel-2026

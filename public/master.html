@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>应用工厂 · 总控后台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 22px; margin-bottom: 4px; color: #f8fafc; }
+  .subtitle { color: #64748b; font-size: 13px; margin-bottom: 28px; }
+
+  /* Auth */
+  .auth-overlay {
+    position: fixed; inset: 0; background: #0f172a; display: flex;
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  .auth-box {
+    background: #1e293b; border-radius: 12px; padding: 32px; width: 380px;
+    border: 1px solid #334155;
+  }
+  .auth-box h2 { font-size: 16px; margin-bottom: 16px; color: #f1f5f9; }
+  .auth-box input {
+    width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155;
+    border-radius: 6px; color: #e2e8f0; font-size: 14px; outline: none;
+  }
+  .auth-box input:focus { border-color: #6366f1; }
+  .auth-box button {
+    width: 100%; margin-top: 12px; padding: 10px; background: #6366f1;
+    border: none; border-radius: 6px; color: #fff; font-size: 14px; cursor: pointer;
+  }
+  .auth-box button:hover { background: #4f46e5; }
+  .auth-error { color: #f87171; font-size: 12px; margin-top: 8px; display: none; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+  }
+  .btn {
+    padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    border: none; font-weight: 500; transition: all 0.15s;
+  }
+  .btn-primary { background: #6366f1; color: #fff; }
+  .btn-primary:hover { background: #4f46e5; }
+  .btn-primary:disabled { background: #475569; cursor: not-allowed; }
+  .btn-outline { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+  .btn-outline:hover { border-color: #6366f1; color: #e2e8f0; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-xs { padding: 2px 8px; font-size: 11px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex;
+    align-items: center; justify-content: center; z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: #1e293b; border-radius: 12px; padding: 28px; width: 420px;
+    border: 1px solid #334155;
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 16px; color: #f1f5f9; }
+  .modal input {
+    width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155;
+    border-radius: 6px; color: #e2e8f0; font-size: 14px; outline: none;
+  }
+  .modal input:focus { border-color: #6366f1; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* Table */
+  .table-container { background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; background: #162032; border-bottom: 1px solid #334155; }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #162032; }
+
+  .status-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+  }
+  .status-live { background: #064e3b; color: #6ee7b7; }
+  .status-deploying { background: #1e3a5f; color: #93c5fd; }
+  .status-creating { background: #5c4d00; color: #fde68a; }
+  .status-failed { background: #450a0a; color: #fca5a5; }
+  .status-suspended { background: #1e293b; color: #64748b; }
+
+  .link { color: #818cf8; text-decoration: none; font-size: 12px; }
+  .link:hover { text-decoration: underline; }
+  .mono { font-family: 'SF Mono', 'Cascadia Code', monospace; font-size: 12px; color: #94a3b8; }
+
+  .empty { text-align: center; padding: 48px 16px; color: #475569; }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+    border-radius: 8px; font-size: 13px; z-index: 200;
+    animation: slideIn 0.3s ease;
+  }
+  .toast-success { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+  .toast-error { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>应用工厂 · 总控后台</h2>
+    <input type="password" id="tokenInput" placeholder="请输入 Master Token" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">验证登录</button>
+    <div class="auth-error" id="authError">Token 错误</div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="container" id="mainApp" style="display:none">
+  <h1>应用工厂</h1>
+  <div class="subtitle">管理所有客户 CheckIn 应用实例</div>
+
+  <div class="toolbar">
+    <span style="color:#64748b;font-size:13px" id="instanceCount">共 0 个实例</span>
+    <div>
+      <button class="btn btn-outline btn-sm" onclick="refreshAll()" style="margin-right:8px">刷新状态</button>
+      <button class="btn btn-primary" onclick="showCreateModal()">+ 创建新实例</button>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>客户名称</th>
+          <th>GitHub 仓库</th>
+          <th>Turso 数据库</th>
+          <th>Render 服务</th>
+          <th>状态</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="instanceTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:flex;gap:12px;margin-top:24px" id="statsContainer"></div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <h3>创建新应用实例</h3>
+    <input type="text" id="clientNameInput" placeholder="客户名称（如：张三、ABC公司）" onkeydown="if(event.key==='Enter')createInstance()">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeCreateModal()">取消</button>
+      <button class="btn btn-primary" id="createBtn" onclick="createInstance()">创建</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let masterToken = localStorage.getItem('master_token') || '';
+
+// ── Auth ──────────────────────────────────────────────────────────────
+
+async function login() {
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) return;
+  try {
+    const res = await fetch('/api/health', { headers: { 'x-master-token': token } });
+    if (res.ok) {
+      masterToken = token;
+      localStorage.setItem('master_token', token);
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      loadInstances();
+    } else {
+      document.getElementById('authError').style.display = 'block';
+    }
+  } catch (e) {
+    document.getElementById('authError').style.display = 'block';
+  }
+}
+
+// Auto-login if token cached
+if (masterToken) {
+  document.getElementById('tokenInput').value = masterToken;
+  login();
+}
+
+// ── Instance Management ───────────────────────────────────────────────
+
+async function loadInstances() {
+  try {
+    const res = await fetch('/api/instances', { headers: { 'x-master-token': masterToken } });
+    if (!res.ok) throw new Error('Unauthorized');
+    const instances = await res.json();
+    renderTable(instances);
+    renderStats(instances);
+  } catch (e) {
+    if (e.message === 'Unauthorized') {
+      masterToken = '';
+      localStorage.removeItem('master_token');
+      location.reload();
+    }
+    toast('加载失败: ' + e.message, 'error');
+  }
+}
+
+function renderTable(instances) {
+  const tbody = document.getElementById('instanceTable');
+  document.getElementById('instanceCount').textContent = `共 ${instances.length} 个实例`;
+
+  if (instances.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📦</div>还没有实例，点击"创建新实例"开始</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = instances.map(inst => `
+    <tr>
+      <td><strong>${esc(inst.client_name)}</strong><br><span class="mono">${inst.id}</span></td>
+      <td><a class="link" href="https://github.com/${esc(inst.github_repo)}" target="_blank">${esc(inst.github_repo)}</a></td>
+      <td><span class="mono">${esc(inst.turso_db)}</span></td>
+      <td>
+        ${inst.render_url
+          ? `<a class="link" href="${esc(inst.render_url)}" target="_blank">${esc(inst.render_url)}</a>`
+          : `<span class="mono">${esc(inst.render_service_id)}</span>`
+        }
+      </td>
+      <td>${statusBadge(inst.status)}</td>
+      <td>${inst.created_at ? inst.created_at.substring(0, 10) : '-'}</td>
+      <td>
+        <button class="btn btn-outline btn-xs" onclick="refreshOne('${inst.id}')">刷新</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderStats(instances) {
+  const live = instances.filter(i => i.status === 'live').length;
+  const deploying = instances.filter(i => i.status === 'deploying' || i.status === 'creating').length;
+  const failed = instances.filter(i => i.status === 'failed').length;
+
+  document.getElementById('statsContainer').innerHTML = `
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;flex:1">
+      <div style="font-size:24px;font-weight:700;color:#6ee7b7">${live}</div>
+      <div style="font-size:12px;color:#64748b">运行中</div>
+    </div>
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;flex:1">
+      <div style="font-size:24px;font-weight:700;color:#93c5fd">${deploying}</div>
+      <div style="font-size:12px;color:#64748b">部署中</div>
+    </div>
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;flex:1">
+      <div style="font-size:24px;font-weight:700;color:#fca5a5">${failed}</div>
+      <div style="font-size:12px;color:#64748b">失败</div>
+    </div>
+  `;
+}
+
+// ── Create ─────────────────────────────────────────────────────────────
+
+async function createInstance() {
+  const name = document.getElementById('clientNameInput').value.trim();
+  if (!name) return toast('请输入客户名称', 'error');
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  btn.textContent = '创建中...';
+
+  try {
+    const res = await fetch('/api/instances', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-master-token': masterToken },
+      body: JSON.stringify({ client_name: name })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Unknown error');
+    const inst = await res.json();
+    toast(`实例「${inst.clientName}」创建成功！部署启动中...`, 'success');
+    closeCreateModal();
+    loadInstances();
+
+    // Auto-refresh after 10s
+    setTimeout(() => refreshOne(inst.id), 10000);
+  } catch (e) {
+    toast('创建失败: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '创建';
+  }
+}
+
+// ── Refresh ────────────────────────────────────────────────────────────
+
+async function refreshOne(id) {
+  try {
+    await fetch(`/api/instances/${id}/refresh`, {
+      method: 'POST',
+      headers: { 'x-master-token': masterToken }
+    });
+    loadInstances();
+  } catch (e) { /* ignore */ }
+}
+
+async function refreshAll() {
+  try {
+    const res = await fetch('/api/instances', { headers: { 'x-master-token': masterToken } });
+    const instances = await res.json();
+    for (const inst of instances) {
+      try {
+        await fetch(`/api/instances/${inst.id}/refresh`, {
+          method: 'POST',
+          headers: { 'x-master-token': masterToken }
+        });
+      } catch (e) { /* skip */ }
+    }
+    loadInstances();
+  } catch (e) { /* ignore */ }
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────
+
+function showCreateModal() {
+  document.getElementById('createModal').classList.add('active');
+  document.getElementById('clientNameInput').focus();
+}
+function closeCreateModal() {
+  document.getElementById('createModal').classList.remove('active');
+  document.getElementById('clientNameInput').value = '';
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────
+
+function statusBadge(status) {
+  const map = {
+    live: 'status-live', deploying: 'status-deploying',
+    creating: 'status-creating', failed: 'status-failed',
+    suspended: 'status-suspended'
+  };
+  const labels = { live: '运行中', deploying: '部署中', creating: '创建中', failed: '失败', suspended: '已暂停' };
+  return `<span class="status-badge ${map[status] || 'status-suspended'}">${labels[status] || status}</span>`;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+</script>
+</body>
+</html>
