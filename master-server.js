@@ -295,8 +295,8 @@ app.post('/api/instances/:id/refresh', authMiddleware, async (req, res) => {
   }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
+// Health check (requires auth)
+app.get('/api/health', authMiddleware, (req, res) => {
   res.json({ ok: true, instances: 'running' });
 });
 

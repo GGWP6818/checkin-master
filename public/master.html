@@ -204,7 +204,10 @@ async function loadInstances() {
     if (e.message === 'Unauthorized') {
       masterToken = '';
       localStorage.removeItem('master_token');
-      location.reload();
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('authOverlay').style.display = 'flex';
+      toast('Token 已失效，请重新登录', 'error');
+      return;
     }
     toast('加载失败: ' + e.message, 'error');
   }
