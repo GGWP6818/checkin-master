@@ -13,6 +13,7 @@ const TURSO_TOKEN = process.env.TURSO_TOKEN || '';
 
 const GH_USER = process.env.GH_USER || 'GGWP6818';
 const TURSO_ORG = process.env.TURSO_ORG || 'ggwp6818';
+const TURSO_LOCATION = process.env.TURSO_LOCATION || 'aws-ap-northeast-1';
 const TEMPLATE_REPO = process.env.TEMPLATE_REPO || 'checkin-template';
 const MASTER_TOKEN = process.env.MASTER_TOKEN || crypto.randomBytes(16).toString('hex');
 
@@ -108,27 +109,23 @@ async function createInstance(clientName) {
   });
   console.log(`[${instanceId}] Forked: ${fork.full_name}`);
 
-  // Step 2: Create Turso database
+  // Step 2: Create Turso database (ensure default group exists)
   console.log(`[${instanceId}] Creating Turso DB: ${slug}`);
-  let tursoDb;
+  const TURSO_GROUP = process.env.TURSO_GROUP || 'default';
+  // Ensure group exists
   try {
-    tursoDb = await tursoAPI('POST', `/v1/organizations/${TURSO_ORG}/databases`, {
-      name: slug,
-      location: 'hkg'
+    await tursoAPI('POST', `/v1/organizations/${TURSO_ORG}/groups`, {
+      name: TURSO_GROUP,
+      location: process.env.TURSO_LOCATION || 'aws-ap-northeast-1'
     });
   } catch (e) {
-    // Try alternate locations
-    for (const loc of ['sin', 'nrt', 'syd']) {
-      try {
-        tursoDb = await tursoAPI('POST', `/v1/organizations/${TURSO_ORG}/databases`, {
-          name: slug + '-' + loc,
-          location: loc
-        });
-        break;
-      } catch (_) { continue; }
-    }
-    if (!tursoDb) throw new Error('Failed to create Turso DB in all regions');
+    // Group may already exist, continue
+    if (!e.message.includes('already')) console.log(`Group note: ${e.message}`);
   }
+  const tursoDb = await tursoAPI('POST', `/v1/organizations/${TURSO_ORG}/databases`, {
+    name: slug,
+    group: TURSO_GROUP
+  });
   console.log(`[${instanceId}] Turso DB: ${tursoDb.Name}`);
 
   // Step 3: Create Turso token for the DB
