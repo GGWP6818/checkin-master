@@ -204,8 +204,10 @@ async function createInstance(clientName) {
     serviceDetails: {
       env: 'node',
       plan: 'free',
-      buildCommand: 'npm install',
-      startCommand: 'node server.js',
+      envSpecificDetails: {
+        buildCommand: 'npm install',
+        startCommand: 'node server.js'
+      },
       envVars: [
         { key: 'TURSO_URL', value: dbUrl },
         { key: 'TURSO_TOKEN', value: dbToken },
