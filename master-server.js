@@ -201,15 +201,18 @@ async function createInstance(clientName) {
     ownerId: await getRenderOwnerId(),
     repo: `${GH_USER}/${repoName}`,
     branch: 'main',
-    buildCommand: 'npm install',
-    startCommand: 'node server.js',
-    plan: 'free',
-    envVars: [
-      { key: 'TURSO_URL', value: dbUrl },
-      { key: 'TURSO_TOKEN', value: dbToken },
-      { key: 'JWT_SECRET', value: jwtSecret },
-      { key: 'ADMIN_TOKEN', value: adminToken }
-    ]
+    serviceDetails: {
+      env: 'node',
+      plan: 'free',
+      buildCommand: 'npm install',
+      startCommand: 'node server.js',
+      envVars: [
+        { key: 'TURSO_URL', value: dbUrl },
+        { key: 'TURSO_TOKEN', value: dbToken },
+        { key: 'JWT_SECRET', value: jwtSecret },
+        { key: 'ADMIN_TOKEN', value: adminToken }
+      ]
+    }
   });
 
   console.log(`[${instanceId}] Render service: ${renderService.id}`);
