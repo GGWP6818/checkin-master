@@ -95,7 +95,7 @@ async function generateRandomString(len = 12) {
 // ── Core: Create New Instance ─────────────────────────────────────────
 
 async function createInstance(clientName) {
-  const instanceId = 'inst_' + Date.now().toString(36) + '_' + generateRandomString(6);
+  const instanceId = 'inst_' + Date.now().toString(36) + '_' + await generateRandomString(6);
   const repoName = `checkin-${clientName.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`;
   const slug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '-' + Date.now().toString(36).slice(-8);
 
@@ -140,8 +140,8 @@ async function createInstance(clientName) {
   console.log(`[${instanceId}] DB URL: ${dbUrl}`);
 
   // Step 4: Update forked repo's server.js with new credentials
-  const jwtSecret = 'checkin-' + generateRandomString(16);
-  const adminToken = 'admin-' + generateRandomString(16);
+  const jwtSecret = 'checkin-' + await generateRandomString(16);
+  const adminToken = 'admin-' + await generateRandomString(16);
 
   // Poll for server.js content (generate API can be async)
   let templateFile = null;
