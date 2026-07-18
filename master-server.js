@@ -103,11 +103,13 @@ async function createInstance(clientName) {
 
   // Step 1: Fork template repo
   console.log(`[${instanceId}] Forking repo...`);
-  const fork = await githubAPI('POST', `/repos/${GH_USER}/${TEMPLATE_REPO}/forks`, {
+  const fork = await githubAPI('POST', `/repos/${GH_USER}/${TEMPLATE_REPO}/generate`, {
+    owner: GH_USER,
     name: repoName,
-    default_branch_only: true
+    private: true,
+    include_all_branches: false
   });
-  console.log(`[${instanceId}] Forked: ${fork.full_name}`);
+  console.log(`[${instanceId}] Generated: ${fork.full_name}`);
 
   // Step 2: Create Turso database (ensure default group exists)
   console.log(`[${instanceId}] Creating Turso DB: ${slug}`);
