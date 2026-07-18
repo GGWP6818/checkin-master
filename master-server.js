@@ -97,7 +97,7 @@ async function generateRandomString(len = 12) {
 async function createInstance(clientName) {
   const instanceId = 'inst_' + Date.now().toString(36) + '_' + generateRandomString(6);
   const repoName = `checkin-${clientName.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`;
-  const slug = instanceId.slice(0, 30).replace(/_/g, '-');
+  const slug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '-' + Date.now().toString(36).slice(-8);
 
   console.log(`[${instanceId}] Creating instance for "${clientName}" → repo: ${repoName}`);
 
