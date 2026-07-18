@@ -126,6 +126,7 @@ async function createInstance(clientName) {
     name: slug,
     group: TURSO_GROUP
   });
+  const tursoDb = tursoDbResp.database || tursoDbResp;
   console.log(`[${instanceId}] Turso DB: ${tursoDb.Name}`);
 
   // Step 3: Create Turso token for the DB
