@@ -122,7 +122,7 @@ async function createInstance(clientName) {
     // Group may already exist, continue
     if (!e.message.includes('already')) console.log(`Group note: ${e.message}`);
   }
-  const tursoDb = await tursoAPI('POST', `/v1/organizations/${TURSO_ORG}/databases`, {
+  const tursoDbResp = await tursoAPI('POST', `/v1/organizations/${TURSO_ORG}/databases`, {
     name: slug,
     group: TURSO_GROUP
   });
