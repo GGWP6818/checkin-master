@@ -195,7 +195,7 @@ async function createInstance(clientName) {
   const serviceName = `checkin-${clientName.toLowerCase().replace(/[^a-z0-9-]/g, '-').substring(0, 20)}`;
   console.log(`[${instanceId}] Creating Render service: ${serviceName}`);
 
-  const renderService = await renderAPI('POST', '/services', {
+  const renderServiceResp = await renderAPI('POST', '/services', {
     type: 'web_service',
     name: serviceName,
     ownerId: await getRenderOwnerId(),
@@ -217,6 +217,7 @@ async function createInstance(clientName) {
     }
   });
 
+  const renderService = renderServiceResp.service || renderServiceResp;
   console.log(`[${instanceId}] Render service: ${renderService.id}`);
 
   // Save to master DB
