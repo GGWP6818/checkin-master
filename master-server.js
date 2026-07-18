@@ -106,7 +106,7 @@ async function createInstance(clientName) {
   const fork = await githubAPI('POST', `/repos/${GH_USER}/${TEMPLATE_REPO}/generate`, {
     owner: GH_USER,
     name: repoName,
-    private: true,
+    private: false,
     include_all_branches: false
   });
   console.log(`[${instanceId}] Generated: ${fork.full_name}`);
