@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const crypto = require('crypto');
@@ -143,8 +143,24 @@ async function createInstance(clientName) {
   const jwtSecret = 'checkin-' + generateRandomString(16);
   const adminToken = 'admin-' + generateRandomString(16);
 
-  // Get server.js content from template
-  const templateFile = await githubAPI('GET', `/repos/${GH_USER}/${repoName}/contents/server.js`);
+  // Poll for server.js content (generate API can be async)
+  let templateFile = null;
+  console.log(`[${instanceId}] Waiting for repo content...`);
+  for (let attempt = 1; attempt <= 12; attempt++) {
+    try {
+      templateFile = await githubAPI('GET', `/repos/${GH_USER}/${repoName}/contents/server.js`);
+      console.log(`[${instanceId}] server.js ready (attempt ${attempt})`);
+      break;
+    } catch (e) {
+      if (e.message.includes('404') && attempt < 12) {
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+      throw e;
+    }
+  }
+  if (!templateFile) throw new Error('Timed out waiting for repo content');
+
   let serverContent = Buffer.from(templateFile.content, 'base64').toString('utf-8');
 
   // Replace Turso credentials in server.js
@@ -311,3 +327,4 @@ app.listen(PORT, () => {
   console.log(`Master Panel running on port ${PORT}`);
   console.log(`Master Token: ${MASTER_TOKEN}`);
 });
+
