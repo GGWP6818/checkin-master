@@ -199,7 +199,7 @@ async function createInstance(clientName) {
     type: 'web_service',
     name: serviceName,
     ownerId: await getRenderOwnerId(),
-    repo: `${GH_USER}/${repoName}`,
+    repo: `https://github.com/${GH_USER}/${repoName}`,
     branch: 'main',
     serviceDetails: {
       env: 'node',
