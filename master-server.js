@@ -101,15 +101,31 @@ async function createInstance(clientName) {
 
   console.log(`[${instanceId}] Creating instance for "${clientName}" → repo: ${repoName}`);
 
-  // Step 1: Fork template repo
+  // Step 1: Fork template repo (auto-suffix on name conflict)
   console.log(`[${instanceId}] Forking repo...`);
-  const fork = await githubAPI('POST', `/repos/${GH_USER}/${TEMPLATE_REPO}/generate`, {
-    owner: GH_USER,
-    name: repoName,
-    private: false,
-    include_all_branches: false
-  });
+  let fork = null;
+  let tryName = repoName;
+  for (let suffix = 0; suffix < 10; suffix++) {
+    try {
+      fork = await githubAPI('POST', `/repos/${GH_USER}/${TEMPLATE_REPO}/generate`, {
+        owner: GH_USER,
+        name: tryName,
+        private: false,
+        include_all_branches: false
+      });
+      break; // success
+    } catch (e) {
+      if (e.message.includes('Name already exists') && suffix < 9) {
+        tryName = `${repoName}-${suffix + 2}`;
+        console.log(`[${instanceId}] Name conflict, retrying as: ${tryName}`);
+        await new Promise(r => setTimeout(r, 500));
+        continue;
+      }
+      throw e;
+    }
+  }
   console.log(`[${instanceId}] Generated: ${fork.full_name}`);
+  const finalRepoName = tryName; // use the actual repo name going forward
 
   // Step 2: Create Turso database (ensure default group exists)
   console.log(`[${instanceId}] Creating Turso DB: ${slug}`);
@@ -148,7 +164,7 @@ async function createInstance(clientName) {
   console.log(`[${instanceId}] Waiting for repo content...`);
   for (let attempt = 1; attempt <= 12; attempt++) {
     try {
-      templateFile = await githubAPI('GET', `/repos/${GH_USER}/${repoName}/contents/server.js`);
+      templateFile = await githubAPI('GET', `/repos/${GH_USER}/${finalRepoName}/contents/server.js`);
       console.log(`[${instanceId}] server.js ready (attempt ${attempt})`);
       break;
     } catch (e) {
@@ -181,7 +197,7 @@ async function createInstance(clientName) {
     `const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '${adminToken}'`
   );
 
-  await githubAPI('PUT', `/repos/${GH_USER}/${repoName}/contents/server.js`, {
+  await githubAPI('PUT', `/repos/${GH_USER}/${finalRepoName}/contents/server.js`, {
     message: 'Configure Turso credentials for deployment',
     content: Buffer.from(serverContent).toString('base64'),
     sha: templateFile.sha
@@ -199,7 +215,7 @@ async function createInstance(clientName) {
     type: 'web_service',
     name: serviceName,
     ownerId: await getRenderOwnerId(),
-    repo: `https://github.com/${GH_USER}/${repoName}`,
+    repo: `https://github.com/${GH_USER}/${finalRepoName}`,
     branch: 'main',
     serviceDetails: {
       env: 'node',
@@ -222,13 +238,13 @@ async function createInstance(clientName) {
 
   // Save to master DB
   db.prepare(`INSERT INTO instances (id, client_name, github_repo, turso_db, turso_db_url, turso_db_token, render_service_id, render_url, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'deploying')`).run(instanceId, clientName, repoName, tursoDb.Name, dbUrl, dbToken, renderService.id, '');
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'deploying')`).run(instanceId, clientName, finalRepoName, tursoDb.Name, dbUrl, dbToken, renderService.id, '');
 
   return {
     id: instanceId,
     clientName,
-    githubRepo: repoName,
-    githubUrl: `https://github.com/${GH_USER}/${repoName}`,
+    githubRepo: finalRepoName,
+    githubUrl: `https://github.com/${GH_USER}/${finalRepoName}`,
     tursoDb: tursoDb.Name,
     tursoDbUrl: dbUrl,
     renderServiceId: renderService.id,
